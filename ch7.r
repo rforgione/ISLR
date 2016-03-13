@@ -129,3 +129,38 @@ plot(mpg~horsepower, data=Auto, pch=20, col="darkgrey")
 hp.range <- range(Auto$horsepower)
 hp.grid <- seq(hp.range[1], hp.range[2])
 lines(hp.grid, predict(chosen.model, data.frame(horsepower=hp.grid)), col="blue", lwd=5)
+
+###
+# Question 9
+###
+
+library(MASS)
+
+# a.
+fit <- glm(nox~poly(dis,3), data=Boston)
+
+# Regression output:
+summary(fit)
+
+# b.
+
+scores <- c()
+
+for(i in 1:10) {
+    fit <- glm(nox~poly(dis,i), data=Boston)
+    scores <- c(scores, sum(fit$residuals^2))
+}
+
+plot(1:10, scores, type="l", lwd=2)
+
+# c. 
+cv.scores <- c()
+
+for(i in 1:10) {
+    fit <- glm(nox~poly(dis,i), data=Boston)
+    cv.scores <- c(cv.scores, cv.glm(Boston, fit, K=10)$delta[2])
+}
+
+best.degree <- which(cv.scores == cv.scores[cv.scores < min(cv.scores) + sd(cv.scores)*.2][1])
+best.fit <- glm(nox~poly(dis,best.degree), data=Boston)
+
