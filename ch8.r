@@ -263,3 +263,146 @@ predictions <- predict(tree.model, newdata=OJ[!train,])[,"CH"]
 actuals <- OJ[!train,]$Purchase == "CH"
 mse <- mean((predictions - actuals)^2)
 # The test error rate is 0.1201726
+=======
+predictions <- predict(tree.model, newdata=OJ[!train,], type="class")
+actuals <- OJ[!train,]$Purchase
+misclass.unpruned <- sum(predictions != actuals)
+misclass.unpruned / length(predictions)
+summary(tree.model)
+# train error rate is .1688
+# test error rate is 0.1481481
+
+# f.
+cv.tree.results <- cv.tree(tree.model, FUN=prune.misclass)
+cv.tree.results
+
+#. g
+plot(cv.tree.results)
+
+# h. 
+# Looks like the optimal tree size is 7 terminal nodes
+# 7 terminal nodes is the simplest we can get and still
+# maintain our best misclassification error
+
+new.cv.tree <- prune.tree(tree.model, best=7)
+
+new.predictions <- predict(new.cv.tree, newdata=OJ[!train,], type="class")
+pruned.misclass <- sum(new.predictions != actuals)
+pruned.misclass/length(new.predictions)
+summary(new.cv.tree)
+# train error rate is .19
+# test error rate is .177
+# these are worse than the unpruned model
+# some experimentation shows that 8 nodes is equivalent
+# to the unpruned model.
+# either way, pruning isn't helping much.
+
+# 10.
+# a.
+hitters.clean <- Hitters[!is.na(Hitters$Salary),]
+
+# b.
+nrow(hitters.clean)
+nrow(Hitters)
+train <- rep(FALSE, nrow(hitters.clean))
+train[1:200] <- TRUE
+
+library(gbm)
+set.seed(1)
+
+# c.
+
+train.mses <- c()
+for(i in seq(0.1,1,0.1)) {
+    boost.hitters <- gbm(log(Salary)~., 
+                         data=hitters.clean[train,], 
+                         distribution="gaussian",
+                         n.trees=1000,
+                         shrinkage=i)
+    predictions <- predict(boost.hitters, newdata=hitters.clean[train,], n.trees=1000)
+    train.mse <- mean((predictions - log(hitters.clean[train,]$Salary))^2)
+    train.mses <- c(train.mses, train.mse)
+}
+
+plot(seq(0.1,1,0.1), train.mses, type="l")
+
+
+# d.
+# first, we get the test mse of boosting:
+boost.model <- gbm(log(Salary)~.,
+                   data=hitters.clean[train,],
+                   distribution="gaussian",
+                   n.trees=1000,
+                   shrinkage=0.2)
+
+test.predictions <- predict(boost.model, newdata=hitters.clean[!train,], n.trees=1000)
+test.mse <- mean((test.predictions - log(hitters.clean[!train,]$Salary))^2)
+test.mse
+
+# e.
+# ridge regression: 
+library(glmnet)
+grid <- 10^seq(10,-2,length=100)
+x <- model.matrix(log(Salary)~.,hitters.clean)
+y <- log(hitters.clean$Salary)
+cv.out <- cv.glmnet(x[train,], y[train],alpha=0, lambda=grid)
+bestlam <- cv.out$lambda.min
+ridge.mod <- glmnet(x[train,], y[train], lambda=grid, alpha=0)
+ridge.test.predictions <- predict(ridge.mod, s=bestlam, newx=x[-train,])
+ridge.test.mse <- mean((ridge.test.predictions - y[-train])^2)
+ridge.test.mse
+# the test MSE for ridge regression shakes out slightly higher, at
+# .38 v.s. .28 for boosting.
+
+# I guess we have to do a second one according to the instructions.
+lm.mod <- lm(log(Salary)~., data=hitters.clean, subset=train)
+lm.test.predictions <- predict(lm.mod, newdata=hitters.clean[!train,])
+lm.test.mse <- mean((lm.test.predictions - log(hitters.clean$Salary[!train]))^2)
+lm.test.mse
+# plain multiple regression is by far the worst of all. 
+# we get a test MSE of .49
+
+# f.
+summary(boost.model)
+# CAtBat, PutOuts and CHits seem to be the most important.
+
+# g.
+bagging.model <- randomForest(log(Salary)~., 
+                              data=hitters.clean[train,], 
+                              mtry=ncol(hitters.clean)-1)
+bagging.pred <- predict(bagging.model, newdata=hitters.clean[!train,])
+bagging.test.mse <- mean((bagging.pred - log(hitters.clean$Salary[!train]))^2)
+# this is lowest of all at .23
+
+# 11.
+# a.
+total.rows <- nrow(Caravan)
+train <- rep(TRUE,total.rows)
+train[1001:nrow(Caravan)] <- FALSE
+# b.
+library(gbm)
+library(ISLR)
+library(caret)
+
+caravan.mod <- Caravan
+caravan.mod$Purchase <- ifelse(caravan.mod$Purchase == "Yes", 1, 0)
+Caravan.train <- caravan.mod[train,]
+Caravan.test <- caravan.mod[!train,]
+set.seed(342)
+boost.caravan <- gbm(Purchase ~ ., data=Caravan.train, shrinkage=.01, 
+                     n.trees=1000, distribution="bernoulli")
+summary(boost.caravan)
+# PPERSAUT, MKOOPKLA, and MOPLHOOG seem to be most important, in that order.
+# c.
+caravan.boost.pred <- ifelse(predict(boost.caravan, Caravan.test, n.trees=1000, type="response") > .2,1,0)
+
+# confusion matrix
+table(Caravan.test$Purchase, caravan.boost.pred)
+34 / (34+137)
+# roughly 20%
+
+logistic.caravan <- glm(Purchase ~ ., data=Caravan.train, family="binomial")
+logistic.predictions <- ifelse(predict(logistic.caravan, newdata=Caravan.test, type="response") > .2,1,0)
+table(Caravan.test$Purchase, logistic.predictions)
+58 / (58 + 350)
+# for logistic regression, we only get ~14% of predicted purchasers actually making a purchase. 
