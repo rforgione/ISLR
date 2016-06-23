@@ -99,6 +99,51 @@ fitted <- attributes(predict(svmfit.opt, dat[train,], decision.values=TRUE))$dec
 par(mfrow=c(1,2))
 rocplot(fitted,dat[train,"y"], main="Training Data")
 
+# 9.6.4 SVM with Multiple Classes
+set.seed(1)
+x=rbind(x,matrix(rnorm(50*2),ncol=2))
+y <- c(y,rep(0,50))
+x[y==0,2] <- x[y==0,2] + 2
+dat <- data.frame(x=x,y=as.factor(y))
+par(mfrow=c(1,1))
+plot(x,col=(y+1))
+svmfit <- svm(y~.,data=dat, kernel="radial", cost=10, gamma=1)
+
+# 9.6.5 Application to Gene Expression Data
+library(ISLR)
+names(Khan)
+dim(Khan$xtrain)
+dim(Khan$xtest)
+length(Khan$ytrain)
+length(Khan$ytest)
+table(Khan$ytrain)
+table(Khan$ytest)
+dat <- data.frame(x=Khan$xtrain, y=as.factor(Khan$ytrain))
+out <- svm(y~.,data=dat, kernel="linear", cost=10)
+summary(out)
+table(out$fitted, dat$y)
+
+dat.te <- data.frame(x=Khan$xtest, y=as.factor(Khan$ytest))
+pred.te <- predict(out, newdata=dat.te)
+table(pred.te, dat.te$y)
+
+# 9.7 Exercises
+
+# 1.
+par(mfrow=c(1,1))
+# a. 
+ax1 <- seq(-10,10)
+ax2 <- 1 + 3*ax1
+plot(ax1,ax2, type="l", col="red")
+text(c(0),c(-20), "greater than 0", col="red")
+text(c(0),c(20), "less than 0", col="red")
+# b.
+bx2 <- seq(-10,10)
+bx1 <- 2 - 2*bx2
+lines(bx1,bx2,type="l", col="blue")
+text(c(0),c(-15), "less than 0", col="blue")
+text(c(0),c(15), "greater than 0", col="blue")
+
 # 2. 
 # a.
 x1 <- seq(-10:10)
