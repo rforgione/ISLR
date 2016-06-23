@@ -206,3 +206,5 @@ arrows(4,4,4,3.5)
 
 # e. A slight movement in point #7 would not affect the maximal margin
 # hyperplane because it depends only on the support vectors. 
+points(2,3, col="blue")
+
