@@ -196,3 +196,13 @@ abline(-.5,1)
 # 0 = 0.5 + x1 - x2
 # b0 = 0.5, b1 = 1, b2 = -1
 
+# d.
+abline(-1, 1, lty = 2)
+abline(0, 1, lty = 2)
+arrows(2,1,2,1.5)
+arrows(2,2,2,1.5)
+arrows(4,3,4,3.5)
+arrows(4,4,4,3.5)
+
+# e. A slight movement in point #7 would not affect the maximal margin
+# hyperplane because it depends only on the support vectors. 
