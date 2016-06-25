@@ -208,3 +208,49 @@ arrows(4,4,4,3.5)
 # hyperplane because it depends only on the support vectors. 
 points(2,3, col="blue")
 
+# 4.
+x1 <- rnorm(100)
+x2 <- rnorm(100)
+
+y <- rep("blue",100)
+rad <- .8
+y[(x1 < rad) & (x1 > -rad) & (x2 < rad) & (x2 > -rad)] <- "red"
+
+space <- .2
+
+x1[x1 < -rad] <- x1[x1 < -rad] - space
+x1[x1 > rad] <- x1[x1 > rad] + space
+x2[x2 < -rad] <- x2[x2 < -rad] - space
+x2[x2 > rad] <- x2[x2 > rad] + space
+
+df <- data.frame(x1,x2,y)
+
+test <- rep(FALSE,100)
+test[51:100] <- TRUE
+
+with(df, plot(x1,x2,col=y))
+
+svm.svc <- svm(y~., data=df[!test,], kernel="linear", cost=10)
+# test table
+table(predict(svm.svc, newdata=df[test,], type="class"), df[test,]$y)
+# test error
+13/(38+13)
+# 26% error rate
+# train table
+table(predict(svm.svc, newdata=df[!test,]), df[!test,]$y)
+9/40
+# ~30% train error
+
+svm.rbf <- svm(y~., data=df[!test,], kernel="radial", cost=10)
+# train table
+table(predict(svm.rbf, newdata=df[!test,]), df[!test,]$y)
+# train error rate is 
+# 0
+plot(svm.rbf,df)
+
+# test table
+table(predict(svm.rbf, newdata=df[test,]), df[test,]$y)
+# test error rate is 
+# 0
+
+# no train or test errors for radial kernel.
