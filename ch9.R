@@ -254,3 +254,52 @@ table(predict(svm.rbf, newdata=df[test,]), df[test,]$y)
 # 0
 
 # no train or test errors for radial kernel.
+
+# 5.
+# a.
+x1 <- runif(500)-0.5
+x2 <- runif(500)-0.5
+y <- 1*(x1^2 - x2^2 > 0)
+
+df <- data.frame(x1,x2,y)
+
+# b.
+# add 1 because R uses zero-indexed arrays -- if y is 0 or 1,
+# we need to add 1 to make it 1-indexed for access to the color array
+# that we pass
+plot(x1,x2,col=c("red","blue")[y+1])
+
+test <- rep(FALSE,500)
+set.seed(1)
+test[sample(500,100)] <- TRUE
+
+# c.
+lg.mod <- glm(y~x1+x2,data=df,family="binomial")
+
+# d.
+pred.responses <- predict(lg.mod,newdata=df, type="response")
+pred.labels <- ifelse(pred.responses > .5,1,0)
+
+plot(df$x1,df$x2,col=c("red","blue")[pred.labels + 1])
+
+# e.
+lg.non.linear <- glm(y~poly(x1,2)+poly(x2,2)+I(x1*x2),data=df,family="binomial")
+
+# f.
+pred.responses.non.linear <- predict(lg.non.linear,newdata=df, type="response")
+pred.labels.non.linear <- ifelse(pred.responses.non.linear > .5,1,0)
+plot(df$x1,df$x2,col=c("red","blue")[pred.labels.non.linear + 1])
+# the decision boundary looks like the actual one.
+
+# g.
+svc <- svm(y~.,data=df,kernel="linear", cost=10)
+pred.responses.svc <- predict(svc,newdata=df, type="response")
+pred.labels.svc <- ifelse(pred.responses.svc > .5,1,0)
+plot(df$x1,df$x2,col=c("red","blue")[pred.labels.svc + 1])
+
+svm.rad <- svm(y~.,data=df,kernel="radial", cost=10)
+pred.responses.svm <- predict(svm.rad,newdata=df, type="response")
+pred.labels.svm <- ifelse(pred.responses.svm > .5,1,0)
+plot(df$x1,df$x2,col=c("red","blue")[pred.labels.svm + 1])
+
+# h. The non-linear svm also shows the true classification boundary.
