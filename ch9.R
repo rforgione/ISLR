@@ -303,3 +303,22 @@ pred.labels.svm <- ifelse(pred.responses.svm > .5,1,0)
 plot(df$x1,df$x2,col=c("red","blue")[pred.labels.svm + 1])
 
 # h. The non-linear svm also shows the true classification boundary.
+
+# 9
+# (a)
+a <- rnorm(100)
+b <- rnorm(100)
+data.mat <- data.eframe(a,b)
+plot(data.mat$a, data.mat$b)
+data.mat[data.mat$b < data.mat$a,'a'] <- data.mat[data.mat$b < data.mat$a,'a'] + .1
+data.mat$class <- ifelse(data.mat$b < data.mat$a,1,0)
+cols <- c("red", "blue")
+plot(data.mat$a, data.mat$b, col=cols[data.mat$class + 1])
+
+# (b)
+tune.out <- tune(svm, class~., data=data.mat, kernel="linear", ranges=list(cost=c(0.1,1,10,100,1000)))
+svc <- svm(class~., data=data.mat, kernel="linear", )
+summary(tune.out)
+# A little over 9% of the examples are misclassified. This goes up as the cost goes up.
+
+# (c)
